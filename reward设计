@@ -1,1 +1,41 @@
+1. 放在 Actor 类之前
+你可以将 mask_action 函数定义在 Actor 类之前，这样它在定义 Actor 类时就可以被调用。
 
+python
+复制代码
+# 动作屏蔽函数
+def mask_action(action, action_low, action_high):
+    """
+    对动作进行屏蔽或限制
+    参数:
+    - action: 动作张量
+    - action_low: 动作的最小值
+    - action_high: 动作的最大值
+    返回:
+    - 屏蔽后的动作
+    """
+    action[:, 0] = torch.clamp(action[:, 0], min=action_low[0], max=action_high[0])
+    return action
+
+# 定义 Actor 类
+class Actor(nn.Module):
+    def __init__(self, state_size, action_size, action_low, action_high, device, n_hiddens):
+        super(Actor, self).__init__()
+        self.fc1 = nn.Linear(state_size, n_hiddens)
+        self.fc2 = nn.Linear(n_hiddens, n_hiddens)
+        self.fc3 = nn.Linear(n_hiddens, action_size)
+        self.action_low = torch.tensor(action_low, dtype=torch.float32).to(device)
+        self.action_high = torch.tensor(action_high, dtype=torch.float32).to(device)
+        self.action_range = (self.action_high - self.action_low) / 2
+        self.action_mid = (self.action_high + self.action_low) / 2
+        self.device = device
+
+    def forward(self, x):
+        x = torch.relu(self.fc1(x))
+        x = torch.relu(self.fc2(x))
+        actions = torch.tanh(self.fc3(x)) * self.action_range + self.action_mid
+
+        # 调用外部的动作屏蔽函数
+        actions = mask_action(actions, self.action_low, self.action_high)
+
+        return actions
