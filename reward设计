@@ -4,6 +4,7 @@
 python
 复制代码
 # 动作屏蔽函数
+```py
 def mask_action(action, action_low, action_high):
     """
     对动作进行屏蔽或限制
@@ -16,6 +17,7 @@ def mask_action(action, action_low, action_high):
     """
     action[:, 0] = torch.clamp(action[:, 0], min=action_low[0], max=action_high[0])
     return action
+```
 
 # 定义 Actor 类
 class Actor(nn.Module):
